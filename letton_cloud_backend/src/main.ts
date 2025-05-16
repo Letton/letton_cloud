@@ -8,7 +8,7 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: process.env.ORIGIN ?? 'http://localhost:3000',
     credentials: true,
   });
   app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
@@ -21,10 +21,6 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  const document = documentFactory();
-  app.getHttpAdapter().get('/api-json', (req, res) => {
-    res.json(document);
-  });
   SwaggerModule.setup('swagger', app, documentFactory, {
     swaggerOptions: {
       persistAuthorization: true,
