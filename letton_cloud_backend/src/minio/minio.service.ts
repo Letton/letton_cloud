@@ -43,15 +43,26 @@ export class MinioService {
     }
   }
   async getPresignedUrl(key: string, expiresSeconds = 21600): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const url = await getSignedUrl(
       this.s3,
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       { expiresIn: expiresSeconds },
     );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    if (!url) {
+      throw new NotFoundException(`File ${key} not found`);
+    }
+    const minioShares = process.env.MINIO_SHARES;
+    if (minioShares) {
+      const originalUrl = new URL(url);
+      const sharesUrl = new URL(minioShares);
+
+      const newUrl = new URL(
+        originalUrl.pathname + originalUrl.search,
+        sharesUrl.origin,
+      );
+      return newUrl.toString();
+    }
     return url;
   }
 }
