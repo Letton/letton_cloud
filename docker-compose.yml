@@ -32,7 +32,7 @@ services:
       - minio
 
   letton_cloud_backend:
-    image: dolbonya/letton_cloud_backend:latest
+    build: ./letton_cloud_backend
     ports:
       - "8080:8080"
     environment:
@@ -57,7 +57,7 @@ services:
         condition: service_healthy
 
   letton_cloud_frontend:
-    image: dolbonya/letton_cloud_frontend:latest
+    build: ./letton_cloud_frontend
     depends_on:
       - letton_cloud_backend
     environment:
