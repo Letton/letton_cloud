@@ -44,11 +44,15 @@ export class MinioService {
   }
   async getPresignedUrl(key: string, expiresSeconds = 21600): Promise<string> {
     const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    console.log(1);
+
     const url = await getSignedUrl(
       this.s3,
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       { expiresIn: expiresSeconds },
     );
+    console.log(url);
+
     if (!url) {
       throw new NotFoundException(`File ${key} not found`);
     }
@@ -57,10 +61,23 @@ export class MinioService {
       const originalUrl = new URL(url);
       const sharesUrl = new URL(minioShares);
 
+      // take last segment (filename with leading slash) from original path
+      const lastSlash = originalUrl.pathname.lastIndexOf('/');
+      const fileSegment = originalUrl.pathname.substring(lastSlash); // includes '/filename'
+
+      // normalize base path from MINIO_SHARES (remove trailing slash unless it's root)
+      let basePath = '';
+      if (sharesUrl.pathname !== '/') {
+        basePath = sharesUrl.pathname.replace(/\/$/, '');
+      }
+
+      const combinedPath = `${basePath}${fileSegment}` || '/';
+
       const newUrl = new URL(
-        originalUrl.pathname + originalUrl.search,
+        combinedPath + originalUrl.search,
         sharesUrl.origin,
       );
+      console.log(newUrl);
       return newUrl.toString();
     }
     return url;
